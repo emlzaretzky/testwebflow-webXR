@@ -212,25 +212,36 @@ class BasicWorldDemo {
     controller2.addEventListener('selectend', onSelectEnd);
 
     renderer.setAnimationLoop(() => {
-      // Move the camera based on controller input
-      if (controller1.userData.isSelecting) {
-        this._camera.position.x += controller1.position.x * 0.1;
-        this._camera.position.y += controller1.position.y * 0.1;
-        this._camera.position.z += controller1.position.z * 0.1;
-      }
-
-      if (controller2.userData.isSelecting) {
-        this._camera.position.x += controller2.position.x * 0.1;
-        this._camera.position.y += controller2.position.y * 0.1;
-        this._camera.position.z += controller2.position.z * 0.1;
-      }
-
+      this._UpdateControllerInputs();
       this._Render();
     });
   }
+
+  // Update camera position based on joystick input
+  _UpdateControllerInputs() {
+    const renderer = this._threejs;
+    const session = renderer.xr.getSession();
+
+    if (session) {
+      const inputSources = session.inputSources;
+      for (const inputSource of inputSources) {
+        if (inputSource.gamepad) {
+          const { axes } = inputSource.gamepad;
+          // axes[2] and axes[3] are typically the joystick values for translation
+          const speed = 0.1;
+          if (inputSource.handedness === 'right') {
+            this._camera.position.x += axes[2] * speed;
+            this._camera.position.z += axes[3] * speed;
+          }
+          if (inputSource.handedness === 'left') {
+            this._camera.position.y += axes[3] * speed;
+          }
+        }
+      }
+    }
+  }
 }
 
-// Ensure that _AddXRControllers is correctly bound within the class context
 let _APP = null;
 
 window.addEventListener('DOMContentLoaded', () => {
