@@ -71,12 +71,19 @@ class BasicWorldDemo {
 
     const loader = new THREE.CubeTextureLoader();
     const texture = loader.load([
-      './resources/posx.jpg',
+         'https://emlzaretzky.github.io/testwebflow-webXR/resources/posx.jpg',
+      'https://emlzaretzky.github.io/testwebflow-webXR/resources/negx.jpg',
+      'https://emlzaretzky.github.io/testwebflow-webXR/resources/posy.jpg',
+      'https://emlzaretzky.github.io/testwebflow-webXR/resources/negy.jpg',
+      'https://emlzaretzky.github.io/testwebflow-webXR/resources/posz.jpg',
+      
+      'https://emlzaretzky.github.io/testwebflow-webXR/resources/negz.jpg',
+      /* './resources/posx.jpg',
       './resources/negx.jpg',
       './resources/posy.jpg',
       './resources/negy.jpg',
       './resources/posz.jpg',
-      './resources/negz.jpg',
+      './resources/negz.jpg',*/
     ]);
     this._scene.background = texture;
 
