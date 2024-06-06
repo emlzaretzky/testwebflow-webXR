@@ -173,29 +173,26 @@ class BasicWorldDemo {
   }
 
   // Add XR controller support
-  _AddXRControllers() {
+    _AddXRControllers() {
     const renderer = this._threejs;
     const scene = this._scene;
+
+    const controllerModelFactory = new XRControllerModelFactory();
 
     // Controller 1
     const controller1 = renderer.xr.getController(0);
     scene.add(controller1);
-
-    // Controller 2
-    const controller2 = renderer.xr.getController(1);
-    scene.add(controller2);
-
-    // Add a visual representation of the controllers
-    const controllerModelFactory = new XRControllerModelFactory();
     const controllerGrip1 = renderer.xr.getControllerGrip(0);
     controllerGrip1.add(controllerModelFactory.createControllerModel(controllerGrip1));
     scene.add(controllerGrip1);
 
+    // Controller 2
+    const controller2 = renderer.xr.getController(1);
+    scene.add(controller2);
     const controllerGrip2 = renderer.xr.getControllerGrip(1);
     controllerGrip2.add(controllerModelFactory.createControllerModel(controllerGrip2));
     scene.add(controllerGrip2);
 
-    // Update the camera position based on controller input
     function onSelectStart(event) {
       const controller = event.target;
       controller.userData.isSelecting = true;
@@ -210,14 +207,8 @@ class BasicWorldDemo {
     controller1.addEventListener('selectend', onSelectEnd);
     controller2.addEventListener('selectstart', onSelectStart);
     controller2.addEventListener('selectend', onSelectEnd);
-
-    renderer.setAnimationLoop(() => {
-      this._UpdateControllerInputs();
-      this._Render();
-    });
   }
 
-  // Update camera position based on joystick input
   _UpdateControllerInputs() {
     const renderer = this._threejs;
     const session = renderer.xr.getSession();
@@ -227,14 +218,22 @@ class BasicWorldDemo {
       for (const inputSource of inputSources) {
         if (inputSource.gamepad) {
           const { axes } = inputSource.gamepad;
-          // axes[2] and axes[3] are typically the joystick values for translation
           const speed = 0.1;
-          if (inputSource.handedness === 'right') {
+
+          // Debugging output
+          console.log(`Axes: ${axes}`);
+
+          // Typical axes for VR controllers: axes[0] (x-axis) and axes[1] (y-axis) for left joystick
+          // Typical axes for VR controllers: axes[2] (x-axis) and axes[3] (y-axis) for right joystick
+          if (inputSource.handedness === 'left') {
+            // Use axes[2] and axes[3] for translation (right joystick typically)
             this._camera.position.x += axes[2] * speed;
             this._camera.position.z += axes[3] * speed;
           }
-          if (inputSource.handedness === 'left') {
-            this._camera.position.y += axes[3] * speed;
+
+          if (inputSource.handedness === 'right') {
+            // Use axes[0] and axes[1] for translation (left joystick typically)
+            this._camera.position.y += axes[1] * speed;
           }
         }
       }
