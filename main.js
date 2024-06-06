@@ -206,7 +206,7 @@ class BasicWorldDemo {
       });
     }
   }
-}
+
 
 let _APP = null;
 
