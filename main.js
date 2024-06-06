@@ -3,8 +3,6 @@ import { OrbitControls } from 'https://cdn.jsdelivr.net/npm/three@0.118/examples
 import { VRButton } from 'https://cdn.jsdelivr.net/npm/three@0.118/examples/jsm/webxr/VRButton.js';
 import { XRControllerModelFactory } from 'https://cdn.jsdelivr.net/npm/three@0.118/examples/jsm/webxr/XRControllerModelFactory.js';
 
-
-
 class BasicWorldDemo {
   constructor() {
     this._Initialize();
@@ -18,14 +16,25 @@ class BasicWorldDemo {
     this._threejs.shadowMap.type = THREE.PCFSoftShadowMap;
     this._threejs.setPixelRatio(window.devicePixelRatio);
     this._threejs.setSize(window.innerWidth, window.innerHeight);
-    this._threejs.xr.enabled = true;  // Enable WebXR
+    this._threejs.xr.enabled = true;
 
     document.body.appendChild(this._threejs.domElement);
-    document.body.appendChild(VRButton.createButton(this._threejs));  // Add VR button
+    document.body.appendChild(VRButton.createButton(this._threejs));
 
     window.addEventListener('resize', () => {
       this._OnWindowResize();
     }, false);
+
+    // Create and style the debug output element
+    this._debugOutput = document.createElement('div');
+    this._debugOutput.style.position = 'absolute';
+    this._debugOutput.style.top = '10px';
+    this._debugOutput.style.left = '10px';
+    this._debugOutput.style.color = 'white';
+    this._debugOutput.style.backgroundColor = 'rgba(0, 0, 0, 0.5)';
+    this._debugOutput.style.padding = '10px';
+    this._debugOutput.style.fontFamily = 'monospace';
+    document.body.appendChild(this._debugOutput);
 
     const fov = 60;
     const aspect = window.innerWidth / window.innerHeight;
@@ -62,19 +71,12 @@ class BasicWorldDemo {
 
     const loader = new THREE.CubeTextureLoader();
     const texture = loader.load([
-    'https://emlzaretzky.github.io/testwebflow-webXR/resources/posx.jpg',
+     'https://emlzaretzky.github.io/testwebflow-webXR/resources/posx.jpg',
       'https://emlzaretzky.github.io/testwebflow-webXR/resources/negx.jpg',
       'https://emlzaretzky.github.io/testwebflow-webXR/resources/posy.jpg',
       'https://emlzaretzky.github.io/testwebflow-webXR/resources/negy.jpg',
       'https://emlzaretzky.github.io/testwebflow-webXR/resources/posz.jpg',
       'https://emlzaretzky.github.io/testwebflow-webXR/resources/negz.jpg',
-      
-     /* './resources/posx.jpg',
-      './resources/negx.jpg',
-      './resources/posy.jpg',
-      './resources/negy.jpg',
-      './resources/posz.jpg',
-      './resources/negz.jpg',*/
     ]);
     this._scene.background = texture;
 
@@ -109,71 +111,68 @@ class BasicWorldDemo {
       }
     }
 
-       // Add keyboard controls for camera movement
-       this._AddKeyboardControls();
+    this._AddKeyboardControls();
+    this._HandleXRSession();
+    this._AddXRControllers();
 
-       // Handle XR session start and end
-       this._HandleXRSession();
-       
-     // Add XR controller support
-     this._AddXRControllers();
-     
-       this._RAF();
-     }
-   
-     _OnWindowResize() {
-       this._camera.aspect = window.innerWidth / window.innerHeight;
-       this._camera.updateProjectionMatrix();
-       this._threejs.setSize(window.innerWidth, window.innerHeight);
-     }
-   
-     _RAF() {
-       this._threejs.setAnimationLoop(() => {
-         this._threejs.render(this._scene, this._camera);
-       });
-     }
-   
-    // Add keyboard controls for camera movement
-    _AddKeyboardControls() {
-      document.addEventListener('keydown', (event) => {
-        const speed = 1;
-        switch (event.key) {
-          case 'ArrowUp':
-            this._camera.position.z -= speed;
-            break;
-          case 'ArrowDown':
-            this._camera.position.z += speed;
-            break;
-          case 'ArrowLeft':
-            this._camera.position.x -= speed;
-            break;
-          case 'ArrowRight':
-            this._camera.position.x += speed;
-            break;
-          case 'w':
-            this._camera.position.y += speed;
-            break;
-          case 's':
-            this._camera.position.y -= speed;
-            break;
-        }
-      });
-    }
-  
-  // Handle XR session start and end
-  _HandleXRSession() {
-    const renderer = this._threejs;
-    renderer.xr.addEventListener('sessionstart', () => {
-      this._xrSessionActive = true;  // Flag to disable keyboard controls
-    });
+    this._RAF();
+  }
 
-    renderer.xr.addEventListener('sessionend', () => {
-      this._xrSessionActive = false;  // Flag to enable keyboard controls
+  _OnWindowResize() {
+    this._camera.aspect = window.innerWidth / window.innerHeight;
+    this._camera.updateProjectionMatrix();
+    this._threejs.setSize(window.innerWidth, window.innerHeight);
+  }
+
+  _RAF() {
+    this._threejs.setAnimationLoop(() => {
+      this._UpdateControllerInputs();
+      this._Render();
     });
   }
 
-  // Add XR controller support
-    _AddXRControllers() {
+  _Render() {
+    this._threejs.render(this._scene, this._camera);
+  }
+
+  _AddKeyboardControls() {
+    document.addEventListener('keydown', (event) => {
+      const speed = 1;
+      switch (event.key) {
+        case 'ArrowUp':
+          this._camera.position.z -= speed;
+          break;
+        case 'ArrowDown':
+          this._camera.position.z += speed;
+          break;
+        case 'ArrowLeft':
+          this._camera.position.x -= speed;
+          break;
+        case 'ArrowRight':
+          this._camera.position.x += speed;
+          break;
+        case 'w':
+          this._camera.position.y += speed;
+          break;
+        case 's':
+          this._camera.position.y -= speed;
+          break;
+      }
+    });
+  }
+
+  _HandleXRSession() {
+    const renderer = this._threejs;
+    renderer.xr.addEventListener('sessionstart', () => {
+      this._xrSessionActive = true;
+    });
+
+    renderer.xr.addEventListener('sessionend', () => {
+      this._xrSessionActive = false;
+    });
+  }
+
+  _AddXRControllers() {
     const renderer = this._threejs;
     const scene = this._scene;
 
@@ -215,28 +214,31 @@ class BasicWorldDemo {
 
     if (session) {
       const inputSources = session.inputSources;
+      let debugText = 'Controller Data:\n';
+
       for (const inputSource of inputSources) {
         if (inputSource.gamepad) {
           const { axes } = inputSource.gamepad;
           const speed = 0.1;
 
-          // Debugging output
-          console.log(`Axes: ${axes}`);
-
           // Typical axes for VR controllers: axes[0] (x-axis) and axes[1] (y-axis) for left joystick
           // Typical axes for VR controllers: axes[2] (x-axis) and axes[3] (y-axis) for right joystick
           if (inputSource.handedness === 'left') {
-            // Use axes[2] and axes[3] for translation (right joystick typically)
             this._camera.position.x += axes[2] * speed;
             this._camera.position.z += axes[3] * speed;
           }
 
           if (inputSource.handedness === 'right') {
-            // Use axes[0] and axes[1] for translation (left joystick typically)
             this._camera.position.y += axes[1] * speed;
           }
+
+          // Update debug text
+          debugText += `${inputSource.handedness} controller: axes[0] = ${axes[0].toFixed(2)}, axes[1] = ${axes[1].toFixed(2)}, axes[2] = ${axes[2].toFixed(2)}, axes[3] = ${axes[3].toFixed(2)}\n`;
         }
       }
+
+      // Update the debug output element
+      this._debugOutput.innerText = debugText;
     }
   }
 }
