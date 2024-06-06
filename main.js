@@ -216,8 +216,7 @@ class BasicWorldDemo {
   }
 
   _UpdateControllerInputs() {
-    const renderer = this._threejs;
-    const session = renderer.xr.getSession();
+    const session = this._threejs.xr.getSession();
 
     if (session) {
       const inputSources = session.inputSources;
@@ -225,30 +224,29 @@ class BasicWorldDemo {
 
       for (const inputSource of inputSources) {
         if (inputSource.gamepad) {
-          const { axes } = inputSource.gamepad;
+          const { axes, buttons } = inputSource.gamepad; // Destructure axes and buttons
           const speed = 0.1;
 
-          // Typical axes for VR controllers: axes[0] (x-axis) and axes[1] (y-axis) for left joystick
-          // Typical axes for VR controllers: axes[2] (x-axis) and axes[3] (y-axis) for right joystick
+          // For left controller
           if (inputSource.handedness === 'left') {
-            this._camera.position.x += axes[2] * speed;
-            this._camera.position.z += axes[3] * speed;
+            this._camera.position.x += axes[2] * speed; // Update x position based on left joystick x-axis
+            this._camera.position.z += axes[3] * speed; // Update z position based on left joystick y-axis
           }
 
+          // For right controller
           if (inputSource.handedness === 'right') {
-            this._camera.position.y += axes[1] * speed;
+            if (buttons[0].pressed) { // A button pressed
+              this._camera.position.z -= speed; // Move camera closer
+            }
+            if (buttons[1].pressed) { // B button pressed
+              this._camera.position.z += speed; // Move camera farther
+            }
           }
 
           // Update debug text
           debugText += `${inputSource.handedness} controller: axes[0] = ${axes[0].toFixed(2)}, axes[1] = ${axes[1].toFixed(2)}, axes[2] = ${axes[2].toFixed(2)}, axes[3] = ${axes[3].toFixed(2)}\n`;
         }
       }
-
-      // Update the debug output element
-      this._debugOutput.innerText = debugText;
-    }
-  }
-}
 
 let _APP = null;
 window.addEventListener('DOMContentLoaded', () => {
