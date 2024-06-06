@@ -2,6 +2,8 @@ import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.118/build/three.mod
 import { OrbitControls } from 'https://cdn.jsdelivr.net/npm/three@0.118/examples/jsm/controls/OrbitControls.js';
 import { VRButton } from 'https://cdn.jsdelivr.net/npm/three@0.118/examples/jsm/webxr/VRButton.js';
 import { XRControllerModelFactory } from 'https://cdn.jsdelivr.net/npm/three@0.118/examples/jsm/webxr/XRControllerModelFactory.js';
+import { FontLoader } from 'https://cdn.jsdelivr.net/npm/three@0.118/examples/jsm/loaders/FontLoader.js';
+import { TextGeometry } from 'https://cdn.jsdelivr.net/npm/three@0.118/examples/jsm/geometries/TextGeometry.js';
 
 class BasicWorldDemo {
   constructor() {
@@ -24,17 +26,6 @@ class BasicWorldDemo {
     window.addEventListener('resize', () => {
       this._OnWindowResize();
     }, false);
-
-    // Create and style the debug output element
-    this._debugOutput = document.createElement('div');
-    this._debugOutput.style.position = 'absolute';
-    this._debugOutput.style.top = '10px';
-    this._debugOutput.style.left = '10px';
-    this._debugOutput.style.color = 'white';
-    this._debugOutput.style.backgroundColor = 'rgba(0, 0, 0, 0.5)';
-    this._debugOutput.style.padding = '10px';
-    this._debugOutput.style.fontFamily = 'monospace';
-    document.body.appendChild(this._debugOutput);
 
     const fov = 60;
     const aspect = window.innerWidth / window.innerHeight;
@@ -71,12 +62,12 @@ class BasicWorldDemo {
 
     const loader = new THREE.CubeTextureLoader();
     const texture = loader.load([
-     'https://emlzaretzky.github.io/testwebflow-webXR/resources/posx.jpg',
-      'https://emlzaretzky.github.io/testwebflow-webXR/resources/negx.jpg',
-      'https://emlzaretzky.github.io/testwebflow-webXR/resources/posy.jpg',
-      'https://emlzaretzky.github.io/testwebflow-webXR/resources/negy.jpg',
-      'https://emlzaretzky.github.io/testwebflow-webXR/resources/posz.jpg',
-      'https://emlzaretzky.github.io/testwebflow-webXR/resources/negz.jpg',
+      './resources/posx.jpg',
+      './resources/negx.jpg',
+      './resources/posy.jpg',
+      './resources/negy.jpg',
+      './resources/posz.jpg',
+      './resources/negz.jpg',
     ]);
     this._scene.background = texture;
 
@@ -114,6 +105,7 @@ class BasicWorldDemo {
     this._AddKeyboardControls();
     this._HandleXRSession();
     this._AddXRControllers();
+    this._AddDebugText();
 
     this._RAF();
   }
@@ -132,6 +124,7 @@ class BasicWorldDemo {
   }
 
   _Render() {
+    this._UpdateDebugTextPosition();
     this._threejs.render(this._scene, this._camera);
   }
 
@@ -208,6 +201,45 @@ class BasicWorldDemo {
     controller2.addEventListener('selectend', onSelectEnd);
   }
 
+  _AddDebugText() {
+    const loader = new FontLoader();
+    loader.load('https://threejs.org/examples/fonts/helvetiker_regular.typeface.json', (font) => {
+      const textGeometry = new TextGeometry('Controller Data', {
+        font: font,
+        size: 0.2,
+        height: 0.02,
+        curveSegments: 12,
+        bevelEnabled: false
+      });
+
+      const textMaterial = new THREE.MeshBasicMaterial({ color: 0xffffff });
+      this._debugTextMesh = new THREE.Mesh(textGeometry, textMaterial);
+      this._scene.add(this._debugTextMesh);
+
+      // Initial position of the text mesh
+      this._debugTextMesh.position.set(0, 0, -2);
+      this._debugTextMesh.rotation.y = Math.PI;
+    });
+  }
+
+  _UpdateDebugTextPosition() {
+    if (this._debugTextMesh) {
+      // Position the text mesh 2 units in front of the camera
+      const cameraDirection = new THREE.Vector3();
+      this._camera.getWorldDirection(cameraDirection);
+
+      const cameraPosition = new THREE.Vector3();
+      this._camera.getWorldPosition(cameraPosition);
+
+      cameraDirection.multiplyScalar(2); // Move the text 2 units in front of the camera
+      this._debugTextMesh.position.copy(cameraPosition).add(cameraDirection);
+
+      // Ensure the text always faces the camera
+      this._debugTextMesh.lookAt(cameraPosition);
+    }
+    }
+  }
+
   _UpdateControllerInputs() {
     const renderer = this._threejs;
     const session = renderer.xr.getSession();
@@ -237,8 +269,20 @@ class BasicWorldDemo {
         }
       }
 
-      // Update the debug output element
-      this._debugOutput.innerText = debugText;
+      // Update the text geometry with the new debug information
+      const loader = new FontLoader();
+      loader.load('https://threejs.org/examples/fonts/helvetiker_regular.typeface.json', (font) => {
+        const textGeometry = new TextGeometry(debugText, {
+          font: font,
+          size: 0.2,
+          height: 0.02,
+          curveSegments: 12,
+          bevelEnabled: false
+        });
+
+        this._debugTextMesh.geometry.dispose(); // Dispose the old geometry
+        this._debugTextMesh.geometry = textGeometry; // Set the new geometry
+      });
     }
   }
 }
