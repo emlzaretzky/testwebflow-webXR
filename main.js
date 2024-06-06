@@ -247,7 +247,8 @@ class BasicWorldDemo {
           debugText += `${inputSource.handedness} controller: axes[0] = ${axes[0].toFixed(2)}, axes[1] = ${axes[1].toFixed(2)}, axes[2] = ${axes[2].toFixed(2)}, axes[3] = ${axes[3].toFixed(2)}\n`;
         }
       }
-
+    }
+    
 let _APP = null;
 window.addEventListener('DOMContentLoaded', () => {
   _APP = new BasicWorldDemo();
