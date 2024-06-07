@@ -1,7 +1,8 @@
 import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.118/build/three.module.js';
 import { OrbitControls } from 'https://cdn.jsdelivr.net/npm/three@0.118/examples/jsm/controls/OrbitControls.js';
 import { VRButton } from 'https://cdn.jsdelivr.net/npm/three@0.118/examples/jsm/webxr/VRButton.js';
-//june 6 - can use WS and arrow keys to move camera. Can't get controllers to work yet.
+
+// june 6 - can use WS and arrow keys to move camera. Can't get controllers to work yet.
 class BasicWorldDemo {
   constructor() {
     this._Initialize();
@@ -59,7 +60,6 @@ class BasicWorldDemo {
 
     const loader = new THREE.CubeTextureLoader();
     const texture = loader.load([
-     
       'https://emlzaretzky.github.io/testwebflow-webXR/resources/posx.jpg',
       'https://emlzaretzky.github.io/testwebflow-webXR/resources/negx.jpg',
       'https://emlzaretzky.github.io/testwebflow-webXR/resources/posy.jpg',
@@ -103,8 +103,14 @@ class BasicWorldDemo {
     // Add keyboard controls for camera movement
     this._AddKeyboardControls();
 
+    // Add console display for VR
+    this._CreateConsoleDisplay();
+
     // Handle XR session start and end
     this._HandleXRSession();
+
+    // Handle XR controllers
+    this._SetupXRControllers();
 
     this._RAF();
   }
@@ -118,6 +124,7 @@ class BasicWorldDemo {
   _RAF() {
     this._threejs.setAnimationLoop(() => {
       this._threejs.render(this._scene, this._camera);
+      this._UpdateConsoleDisplay();
     });
   }
 
@@ -148,6 +155,35 @@ class BasicWorldDemo {
     });
   }
 
+  // Create a console display for VR
+  _CreateConsoleDisplay() {
+    const geometry = new THREE.PlaneGeometry(2, 1);
+    const material = new THREE.MeshBasicMaterial({ color: 0x000000, side: THREE.DoubleSide });
+    this._consolePlane = new THREE.Mesh(geometry, material);
+    this._consolePlane.position.set(0, 2, -3);
+    this._scene.add(this._consolePlane);
+
+    this._consoleText = document.createElement('div');
+    this._consoleText.style.position = 'absolute';
+    this._consoleText.style.width = '200px';
+    this._consoleText.style.height = '100px';
+    this._consoleText.style.backgroundColor = 'black';
+    this._consoleText.style.color = 'white';
+    this._consoleText.style.fontFamily = 'monospace';
+    this._consoleText.style.fontSize = '14px';
+    this._consoleText.style.padding = '10px';
+    this._consoleText.style.overflow = 'auto';
+    document.body.appendChild(this._consoleText);
+  }
+
+  // Update the position of the console display
+  _UpdateConsoleDisplay() {
+    const vector = new THREE.Vector3(0, 0, -3);
+    vector.applyMatrix4(this._camera.matrixWorld);
+    this._consolePlane.position.copy(vector);
+    this._consolePlane.lookAt(this._camera.position);
+  }
+
   // Handle XR session start and end
   _HandleXRSession() {
     const renderer = this._threejs;
@@ -158,6 +194,26 @@ class BasicWorldDemo {
     renderer.xr.addEventListener('sessionend', () => {
       this._xrSessionActive = false;  // Flag to enable keyboard controls
     });
+  }
+
+  // Setup XR controllers
+  _SetupXRControllers() {
+    const controller1 = this._threejs.xr.getController(0);
+    const controller2 = this._threejs.xr.getController(1);
+    this._scene.add(controller1);
+    this._scene.add(controller2);
+
+    controller1.addEventListener('selectstart', () => this._LogToConsole('Controller 1: selectstart'));
+    controller1.addEventListener('selectend', () => this._LogToConsole('Controller 1: selectend'));
+    controller2.addEventListener('selectstart', () => this._LogToConsole('Controller 2: selectstart'));
+    controller2.addEventListener('selectend', () => this._LogToConsole('Controller 2: selectend'));
+  }
+
+  // Log messages to console
+  _LogToConsole(message) {
+    console.log(message);
+    this._consoleText.innerHTML += message + '<br>';
+    this._consoleText.scrollTop = this._consoleText.scrollHeight;
   }
 }
 
