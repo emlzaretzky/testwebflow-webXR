@@ -16,10 +16,10 @@ class BasicWorldDemo {
     this._threejs.shadowMap.type = THREE.PCFSoftShadowMap;
     this._threejs.setPixelRatio(window.devicePixelRatio);
     this._threejs.setSize(window.innerWidth, window.innerHeight);
-    this._threejs.xr.enabled = true;  // Enable WebXR
+    this._threejs.xr.enabled = true;
 
     document.body.appendChild(this._threejs.domElement);
-    document.body.appendChild(VRButton.createButton(this._threejs));  // Add VR button
+    document.body.appendChild(VRButton.createButton(this._threejs));
 
     window.addEventListener('resize', () => {
       this._OnWindowResize();
@@ -60,12 +60,14 @@ class BasicWorldDemo {
 
     const loader = new THREE.CubeTextureLoader();
     const texture = loader.load([
-      './resources/posx.jpg',
-      './resources/negx.jpg',
-      './resources/posy.jpg',
-      './resources/negy.jpg',
-      './resources/posz.jpg',
-      './resources/negz.jpg',
+     
+'https://emlzaretzky.github.io/testwebflow-webXR/resources/posx.jpg',
+'https://emlzaretzky.github.io/testwebflow-webXR/resources/negx.jpg',
+'https://emlzaretzky.github.io/testwebflow-webXR/resources/posy.jpg',
+'https://emlzaretzky.github.io/testwebflow-webXR/resources/negy.jpg',
+'https://emlzaretzky.github.io/testwebflow-webXR/resources/posz.jpg',
+
+'https://emlzaretzky.github.io/testwebflow-webXR/resources/negz.jpg',
     ]);
     this._scene.background = texture;
 
@@ -100,13 +102,8 @@ class BasicWorldDemo {
       }
     }
 
-    // Add keyboard controls for camera movement
     this._AddKeyboardControls();
-
-    // Handle XR session start and end
     this._HandleXRSession();
-
-    // Add XR controller support
     this._AddXRControllers();
 
     this._RAF();
@@ -120,6 +117,7 @@ class BasicWorldDemo {
 
   _RAF() {
     this._threejs.setAnimationLoop(() => {
+      this._UpdateControllerInputs();
       this._Render();
     });
   }
@@ -128,7 +126,6 @@ class BasicWorldDemo {
     this._threejs.render(this._scene, this._camera);
   }
 
-  // Add keyboard controls for camera movement
   _AddKeyboardControls() {
     document.addEventListener('keydown', (event) => {
       const speed = 1;
@@ -155,42 +152,37 @@ class BasicWorldDemo {
     });
   }
 
-  // Handle XR session start and end
   _HandleXRSession() {
     const renderer = this._threejs;
     renderer.xr.addEventListener('sessionstart', () => {
-      this._xrSessionActive = true;  // Flag to disable keyboard controls
+      this._xrSessionActive = true;
     });
 
     renderer.xr.addEventListener('sessionend', () => {
-      this._xrSessionActive = false;  // Flag to enable keyboard controls
+      this._xrSessionActive = false;
     });
   }
 
-  // Add XR controller support
   _AddXRControllers() {
     const renderer = this._threejs;
     const scene = this._scene;
 
+    const controllerModelFactory = new XRControllerModelFactory();
+
     // Controller 1
     const controller1 = renderer.xr.getController(0);
     scene.add(controller1);
-
-    // Controller 2
-    const controller2 = renderer.xr.getController(1);
-    scene.add(controller2);
-
-    // Add a visual representation of the controllers
-    const controllerModelFactory = new XRControllerModelFactory();
     const controllerGrip1 = renderer.xr.getControllerGrip(0);
     controllerGrip1.add(controllerModelFactory.createControllerModel(controllerGrip1));
     scene.add(controllerGrip1);
 
+    // Controller 2
+    const controller2 = renderer.xr.getController(1);
+    scene.add(controller2);
     const controllerGrip2 = renderer.xr.getControllerGrip(1);
     controllerGrip2.add(controllerModelFactory.createControllerModel(controllerGrip2));
     scene.add(controllerGrip2);
 
-    // Update the camera position based on controller input
     function onSelectStart(event) {
       const controller = event.target;
       controller.userData.isSelecting = true;
@@ -205,23 +197,37 @@ class BasicWorldDemo {
     controller1.addEventListener('selectend', onSelectEnd);
     controller2.addEventListener('selectstart', onSelectStart);
     controller2.addEventListener('selectend', onSelectEnd);
+  }
 
-    renderer.setAnimationLoop(() => {
-      // Move the camera based on controller input
-      if (controller1.userData.isSelecting) {
-        this._camera.position.x += controller1.position.x * 0.1;
-        this._camera.position.y += controller1.position.y * 0.1;
-        this._camera.position.z += controller1.position.z * 0.1;
+  _UpdateControllerInputs() {
+    const renderer = this._threejs;
+    const session = renderer.xr.getSession();
+
+    if (session) {
+      const inputSources = session.inputSources;
+      for (const inputSource of inputSources) {
+        if (inputSource.gamepad) {
+          const { axes } = inputSource.gamepad;
+          const speed = 0.1;
+
+          // Debugging output
+          console.log(`Axes: ${axes}`);
+
+          // Typical axes for VR controllers: axes[0] (x-axis) and axes[1] (y-axis) for left joystick
+          // Typical axes for VR controllers: axes[2] (x-axis) and axes[3] (y-axis) for right joystick
+          if (inputSource.handedness === 'left') {
+            // Use axes[2] and axes[3] for translation (right joystick typically)
+            this._camera.position.x += axes[2] * speed;
+            this._camera.position.z += axes[3] * speed;
+          }
+
+          if (inputSource.handedness === 'right') {
+            // Use axes[0] and axes[1] for translation (left joystick typically)
+            this._camera.position.y += axes[1] * speed;
+          }
+        }
       }
-
-      if (controller2.userData.isSelecting) {
-        this._camera.position.x += controller2.position.x * 0.1;
-        this._camera.position.y += controller2.position.y * 0.1;
-        this._camera.position.z += controller2.position.z * 0.1;
-      }
-
-      this._Render();
-    });
+    }
   }
 }
 
