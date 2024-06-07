@@ -207,8 +207,8 @@ class BasicWorldDemo {
       const inputSources = session.inputSources;
       for (const inputSource of inputSources) {
         if (inputSource.gamepad) {
-          const { axes } = inputSource.gamepad;
-          const speed = 0.1;
+          const { buttons } = inputSource.gamepad;
+          const speed = 10;
 
           // Debugging output
           console.log(`Axes: ${axes}`);
@@ -217,13 +217,23 @@ class BasicWorldDemo {
           // Typical axes for VR controllers: axes[2] (x-axis) and axes[3] (y-axis) for right joystick
           if (inputSource.handedness === 'left') {
             // Use axes[2] and axes[3] for translation (right joystick typically)
-            this._camera.position.x += axes[2] * speed;
-            this._camera.position.z += axes[3] * speed;
+            this._camera.position.x += buttons[2] * speed;
+            this._camera.position.z += buttons[3] * speed;
+            this._camera.position.y += buttons[1] * speed;
+            this._camera.position.x += buttons[4] * speed;
+            this._camera.position.z += buttons[5] * speed;
+            this._camera.position.y += buttons[0] * speed;
+
           }
 
           if (inputSource.handedness === 'right') {
             // Use axes[0] and axes[1] for translation (left joystick typically)
-            this._camera.position.y += axes[1] * speed;
+            this._camera.position.x += buttons[2] * speed;
+            this._camera.position.z += buttons[3] * speed;
+            this._camera.position.y += buttons[1] * speed;
+            this._camera.position.x += buttons[4] * speed;
+            this._camera.position.z += buttons[5] * speed;
+            this._camera.position.y += buttons[0] * speed;
           }
         }
       }
