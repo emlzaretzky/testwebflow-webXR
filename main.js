@@ -2,7 +2,6 @@ import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.118/build/three.mod
 import { OrbitControls } from 'https://cdn.jsdelivr.net/npm/three@0.118/examples/jsm/controls/OrbitControls.js';
 import { VRButton } from 'https://cdn.jsdelivr.net/npm/three@0.118/examples/jsm/webxr/VRButton.js';
 
-// june 6 - can use WS and arrow keys to move camera. Can't get controllers to work yet.
 class BasicWorldDemo {
   constructor() {
     this._Initialize();
@@ -103,13 +102,10 @@ class BasicWorldDemo {
     // Add keyboard controls for camera movement
     this._AddKeyboardControls();
 
-    // Add console display for VR
-    this._CreateConsoleDisplay();
-
     // Handle XR session start and end
     this._HandleXRSession();
 
-    // Handle XR controllers
+    // Setup XR controllers
     this._SetupXRControllers();
 
     this._RAF();
@@ -124,7 +120,7 @@ class BasicWorldDemo {
   _RAF() {
     this._threejs.setAnimationLoop(() => {
       this._threejs.render(this._scene, this._camera);
-      this._UpdateConsoleDisplay();
+      this._UpdateControllerInput();
     });
   }
 
@@ -155,35 +151,6 @@ class BasicWorldDemo {
     });
   }
 
-  // Create a console display for VR
-  _CreateConsoleDisplay() {
-    const geometry = new THREE.PlaneGeometry(2, 1);
-    const material = new THREE.MeshBasicMaterial({ color: 0x000000, side: THREE.DoubleSide });
-    this._consolePlane = new THREE.Mesh(geometry, material);
-    this._consolePlane.position.set(0, 2, -3);
-    this._scene.add(this._consolePlane);
-
-    this._consoleText = document.createElement('div');
-    this._consoleText.style.position = 'absolute';
-    this._consoleText.style.width = '200px';
-    this._consoleText.style.height = '100px';
-    this._consoleText.style.backgroundColor = 'black';
-    this._consoleText.style.color = 'white';
-    this._consoleText.style.fontFamily = 'monospace';
-    this._consoleText.style.fontSize = '14px';
-    this._consoleText.style.padding = '10px';
-    this._consoleText.style.overflow = 'auto';
-    document.body.appendChild(this._consoleText);
-  }
-
-  // Update the position of the console display
-  _UpdateConsoleDisplay() {
-    const vector = new THREE.Vector3(0, 0, -3);
-    vector.applyMatrix4(this._camera.matrixWorld);
-    this._consolePlane.position.copy(vector);
-    this._consolePlane.lookAt(this._camera.position);
-  }
-
   // Handle XR session start and end
   _HandleXRSession() {
     const renderer = this._threejs;
@@ -198,22 +165,27 @@ class BasicWorldDemo {
 
   // Setup XR controllers
   _SetupXRControllers() {
-    const controller1 = this._threejs.xr.getController(0);
-    const controller2 = this._threejs.xr.getController(1);
-    this._scene.add(controller1);
-    this._scene.add(controller2);
-
-    controller1.addEventListener('selectstart', () => this._LogToConsole('Controller 1: selectstart'));
-    controller1.addEventListener('selectend', () => this._LogToConsole('Controller 1: selectend'));
-    controller2.addEventListener('selectstart', () => this._LogToConsole('Controller 2: selectstart'));
-    controller2.addEventListener('selectend', () => this._LogToConsole('Controller 2: selectend'));
+    this._controllers = [];
+    for (let i = 0; i < 2; i++) {
+      const controller = this._threejs.xr.getController(i);
+      this._scene.add(controller);
+      this._controllers.push(controller);
+    }
   }
 
-  // Log messages to console
-  _LogToConsole(message) {
-    console.log(message);
-    this._consoleText.innerHTML += message + '<br>';
-    this._consoleText.scrollTop = this._consoleText.scrollHeight;
+  // Update controller input for movement
+  _UpdateControllerInput() {
+    if (this._xrSessionActive) {
+      const speed = 0.1;
+      this._controllers.forEach(controller => {
+        const gamepad = controller.userData.gamepad;
+        if (gamepad && gamepad.axes.length > 2) {
+          const [x, y] = gamepad.axes;
+          this._camera.position.x += x * speed;
+          this._camera.position.z += y * speed;
+        }
+      });
+    }
   }
 }
 
