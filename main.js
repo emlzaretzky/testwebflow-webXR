@@ -152,7 +152,7 @@ class BasicWorldDemo {
     });
   }
 
- /* _HandleXRSession() {
+  _HandleXRSession() {
     const renderer = this._threejs;
     renderer.xr.addEventListener('sessionstart', () => {
       this._xrSessionActive = true;
@@ -161,7 +161,7 @@ class BasicWorldDemo {
     renderer.xr.addEventListener('sessionend', () => {
       this._xrSessionActive = false;
     });
-  }*/
+  }
 
   _AddXRControllers() {
     const renderer = this._threejs;
