@@ -1,8 +1,7 @@
 import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.118/build/three.module.js';
 import { OrbitControls } from 'https://cdn.jsdelivr.net/npm/three@0.118/examples/jsm/controls/OrbitControls.js';
 import { VRButton } from 'https://cdn.jsdelivr.net/npm/three@0.118/examples/jsm/webxr/VRButton.js';
-import { XRControllerModelFactory } from 'https://cdn.jsdelivr.net/npm/three@0.118/examples/jsm/webxr/XRControllerModelFactory.js';
-
+//june 6 - can use WS and arrow keys to move camera. Can't get controllers to work yet.
 class BasicWorldDemo {
   constructor() {
     this._Initialize();
@@ -16,10 +15,10 @@ class BasicWorldDemo {
     this._threejs.shadowMap.type = THREE.PCFSoftShadowMap;
     this._threejs.setPixelRatio(window.devicePixelRatio);
     this._threejs.setSize(window.innerWidth, window.innerHeight);
-    this._threejs.xr.enabled = true;
+    this._threejs.xr.enabled = true;  // Enable WebXR
 
     document.body.appendChild(this._threejs.domElement);
-    document.body.appendChild(VRButton.createButton(this._threejs));
+    document.body.appendChild(VRButton.createButton(this._threejs));  // Add VR button
 
     window.addEventListener('resize', () => {
       this._OnWindowResize();
@@ -61,13 +60,12 @@ class BasicWorldDemo {
     const loader = new THREE.CubeTextureLoader();
     const texture = loader.load([
      
-'https://emlzaretzky.github.io/testwebflow-webXR/resources/posx.jpg',
-'https://emlzaretzky.github.io/testwebflow-webXR/resources/negx.jpg',
-'https://emlzaretzky.github.io/testwebflow-webXR/resources/posy.jpg',
-'https://emlzaretzky.github.io/testwebflow-webXR/resources/negy.jpg',
-'https://emlzaretzky.github.io/testwebflow-webXR/resources/posz.jpg',
-
-'https://emlzaretzky.github.io/testwebflow-webXR/resources/negz.jpg',
+      'https://emlzaretzky.github.io/testwebflow-webXR/resources/posx.jpg',
+      'https://emlzaretzky.github.io/testwebflow-webXR/resources/negx.jpg',
+      'https://emlzaretzky.github.io/testwebflow-webXR/resources/posy.jpg',
+      'https://emlzaretzky.github.io/testwebflow-webXR/resources/negy.jpg',
+      'https://emlzaretzky.github.io/testwebflow-webXR/resources/posz.jpg',
+      'https://emlzaretzky.github.io/testwebflow-webXR/resources/negz.jpg',
     ]);
     this._scene.background = texture;
 
@@ -102,9 +100,11 @@ class BasicWorldDemo {
       }
     }
 
+    // Add keyboard controls for camera movement
     this._AddKeyboardControls();
+
+    // Handle XR session start and end
     this._HandleXRSession();
-    this._AddXRControllers();
 
     this._RAF();
   }
@@ -117,15 +117,11 @@ class BasicWorldDemo {
 
   _RAF() {
     this._threejs.setAnimationLoop(() => {
-      this._UpdateControllerInputs();
-      this._Render();
+      this._threejs.render(this._scene, this._camera);
     });
   }
 
-  _Render() {
-    this._threejs.render(this._scene, this._camera);
-  }
-
+  // Add keyboard controls for camera movement
   _AddKeyboardControls() {
     document.addEventListener('keydown', (event) => {
       const speed = 1;
@@ -152,86 +148,16 @@ class BasicWorldDemo {
     });
   }
 
+  // Handle XR session start and end
   _HandleXRSession() {
     const renderer = this._threejs;
     renderer.xr.addEventListener('sessionstart', () => {
-      this._xrSessionActive = true;
+      this._xrSessionActive = true;  // Flag to disable keyboard controls
     });
 
     renderer.xr.addEventListener('sessionend', () => {
-      this._xrSessionActive = false;
+      this._xrSessionActive = false;  // Flag to enable keyboard controls
     });
-  }
-
-  _AddXRControllers() {
-    const renderer = this._threejs;
-    const scene = this._scene;
-
-    const controllerModelFactory = new XRControllerModelFactory();
-
-    // Controller 1
-    const controller1 = renderer.xr.getController(0);
-    scene.add(controller1);
-    const controllerGrip1 = renderer.xr.getControllerGrip(0);
-    controllerGrip1.add(controllerModelFactory.createControllerModel(controllerGrip1));
-    scene.add(controllerGrip1);
-
-    // Controller 2
-    const controller2 = renderer.xr.getController(1);
-    scene.add(controller2);
-    const controllerGrip2 = renderer.xr.getControllerGrip(1);
-    controllerGrip2.add(controllerModelFactory.createControllerModel(controllerGrip2));
-    scene.add(controllerGrip2);
-
-    function onSelectStart(event) {
-      const controller = event.target;
-      controller.userData.isSelecting = true;
-    }
-
-    function onSelectEnd(event) {
-      const controller = event.target;
-      controller.userData.isSelecting = false;
-    }
-
-    controller1.addEventListener('selectstart', onSelectStart);
-    controller1.addEventListener('selectend', onSelectEnd);
-    controller2.addEventListener('selectstart', onSelectStart);
-    controller2.addEventListener('selectend', onSelectEnd);
-  }
-
-  _UpdateControllerInputs() {
-    const renderer = this._threejs;
-    const session = renderer.xr.getSession();
-
-    if (session) {
-      const inputSources = session.inputSources;
-      for (const inputSource of inputSources) {
-        if (inputSource.gamepad) {
-          const { buttons } = inputSource.gamepad;
-          const speed = 10;
-
-          // Debugging output
-          console.log(`Axes: ${axes}`);
-
-          // Typical axes for VR controllers: axes[0] (x-axis) and axes[1] (y-axis) for left joystick
-          // Typical axes for VR controllers: axes[2] (x-axis) and axes[3] (y-axis) for right joystick
-          if (inputSource.handedness === 'left') {
-            // Use axes[2] and axes[3] for translation (right joystick typically)
-           this._camera.position.x += buttons[2] * speed;
-            this._camera.position.z += buttons[3] * speed;
-       
-
-          }
-
-          if (inputSource.handedness === 'right') {
-            // Use axes[0] and axes[1] for translation (left joystick typically)
-          
-                this._camera.position.x += buttons[4] * speed;
-            this._camera.position.z += buttons[5] * speed;
-          }
-        }
-      }
-    }
   }
 }
 
